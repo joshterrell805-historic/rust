@@ -16,7 +16,7 @@ enum Player {
 
 #[derive(Debug)]
 struct Board {
-  moves : [[(Mark, Player) ; 3] ; 3],
+  moves : [[(Mark, Player) ; BOARD_SIZE] ; BOARD_SIZE],
 }
 
 fn main() {
@@ -27,7 +27,59 @@ fn main() {
 }
 
 fn compute_winner(board : &Board) -> Player {
-  compute_diag_winner(board)
+  let diag = compute_diag_winner(board);
+  if diag != Player::None {
+    return diag;
+  }
+  let vert = compute_vert_winner(board);
+  if vert != Player::None {
+    return vert;
+  }
+  return compute_horiz_winner(board);
+}
+
+fn compute_vert_winner(board : &Board) -> Player {
+  let none = (Mark::None, Player::None);
+  let mut winner = &none;
+
+  'i: for i in 0..BOARD_SIZE {
+    winner = &board.moves[i][0];
+
+    for j in 1..BOARD_SIZE {
+      if *winner != board.moves[i][j] {
+        winner = &none;
+        continue 'i;
+      }
+    }
+
+    if winner != &none {
+      break;
+    }
+  }
+
+  return winner.1;
+}
+
+fn compute_horiz_winner(board : &Board) -> Player {
+  let none = (Mark::None, Player::None);
+  let mut winner = &none;
+
+  'j: for j in 0..BOARD_SIZE {
+    winner = &board.moves[0][j];
+
+    for i in 1..BOARD_SIZE {
+      if *winner != board.moves[i][j] {
+        winner = &none;
+        continue 'j;
+      }
+    }
+
+    if winner != &none {
+      break;
+    }
+  }
+
+  return winner.1;
 }
 
 fn compute_diag_winner(board : &Board) -> Player {
@@ -35,7 +87,7 @@ fn compute_diag_winner(board : &Board) -> Player {
   let mut top_to_bottom = &board.moves[0][0];
   let mut bottom_to_top = &board.moves[0][BOARD_SIZE - 1];
 
-  for i in 1..3 {
+  for i in 1..BOARD_SIZE {
     if *top_to_bottom != board.moves[i][i] {
       top_to_bottom = &none;
     }
@@ -57,6 +109,7 @@ fn test_compute_winner() {
     ([(' ',0),(' ',0),(' ',0),
       (' ',0),(' ',0),(' ',0),
       (' ',0),(' ',0),(' ',0),], Player::None),
+    // diag
     ([('x',1),(' ',0),(' ',0),
       (' ',0),('x',1),(' ',0),
       (' ',0),(' ',0),('x',1),], Player::One),
@@ -81,14 +134,55 @@ fn test_compute_winner() {
     ([(' ',0),(' ',0),('x',2),
       (' ',0),('x',2),(' ',0),
       ('x',2),(' ',0),(' ',0),], Player::Two),
+    // vert
+    ([('x',1),(' ',0),(' ',0),
+      ('x',1),(' ',0),(' ',0),
+      ('x',1),(' ',0),(' ',0),], Player::One),
+    ([(' ',0),('x',1),(' ',0),
+      (' ',0),('x',1),(' ',0),
+      (' ',0),('x',1),(' ',0),], Player::One),
+    ([(' ',0),(' ',0),('x',1),
+      (' ',0),(' ',0),('x',1),
+      (' ',0),(' ',0),('x',1),], Player::One),
+    ([(' ',0),(' ',0),('x',1),
+      (' ',0),(' ',0),('x',2),
+      (' ',0),(' ',0),('x',1),], Player::None),
+    ([(' ',0),(' ',0),('o',1),
+      (' ',0),(' ',0),('o',1),
+      (' ',0),(' ',0),('o',1),], Player::One),
+    ([(' ',0),(' ',0),('o',2),
+      (' ',0),(' ',0),('o',2),
+      (' ',0),(' ',0),('o',2),], Player::Two),
+    // horiz
+    ([('x',2),('x',2),('x',2),
+      (' ',0),(' ',0),(' ',0),
+      (' ',0),(' ',0),(' ',0),], Player::Two),
+    ([(' ',0),(' ',0),(' ',0),
+      ('x',2),('x',2),('x',2),
+      (' ',0),(' ',0),(' ',0),], Player::Two),
+    ([(' ',0),(' ',0),(' ',0),
+      (' ',0),(' ',0),(' ',0),
+      ('x',2),('x',2),('x',2),], Player::Two),
+    ([(' ',0),(' ',0),(' ',0),
+      (' ',0),(' ',0),(' ',0),
+      ('x',2),('x',1),('x',2),], Player::None),
+    ([(' ',0),(' ',0),(' ',0),
+      (' ',0),(' ',0),(' ',0),
+      ('x',2),('o',2),('o',2),], Player::None),
+    ([(' ',0),(' ',0),(' ',0),
+      (' ',0),(' ',0),(' ',0),
+      ('o',2),('o',2),('o',2),], Player::Two),
+    ([(' ',0),(' ',0),(' ',0),
+      (' ',0),(' ',0),(' ',0),
+      ('o',1),('o',1),('o',1),], Player::One),
   ];
 
   for case in &cases {
     let board = Board {
-      moves: [[get_move_from_tuple(&case.0[0]), get_move_from_tuple(&case.0[1]),
-          get_move_from_tuple(&case.0[2]),], [get_move_from_tuple(&case.0[3]),
+      moves: [[get_move_from_tuple(&case.0[0]), get_move_from_tuple(&case.0[3]),
+          get_move_from_tuple(&case.0[6]),], [get_move_from_tuple(&case.0[1]),
           get_move_from_tuple(&case.0[4]), get_move_from_tuple(&case.0[7]),],
-          [get_move_from_tuple(&case.0[6]), get_move_from_tuple(&case.0[8]),
+          [get_move_from_tuple(&case.0[2]), get_move_from_tuple(&case.0[5]),
           get_move_from_tuple(&case.0[8]),],],
     };
     assert_eq!(compute_winner(&board), case.1);
